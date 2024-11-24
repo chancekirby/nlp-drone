@@ -325,12 +325,20 @@ def object_detection(image, model):
     # Parse JSON string into Python list
     detected_objects = json.loads(detected_objects)
 
+    # Create a set of just the item names
+    detected_items = set()
+
     # Parse the results to get the count of each unique object it found
     object_counts = Counter(item["name"] for item in detected_objects)
 
+    for item in detected_objects:
+        detected_items.add(item["name"].lower())
+    item_list = list(detected_items)
+
+
     # Format object counts into a string to give to OpenAI API
     summary = ", ".join(f"{count} {name}" for name, count in object_counts.items())
-    return summary
+    return (summary, item_list)
 
 def stream_video(drone):
     '''
