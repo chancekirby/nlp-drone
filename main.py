@@ -281,6 +281,7 @@ def speech_commands():
                 if len(potential_objects) == 1 and potential_objects[0] == "":
                     print(f'\033[32m I don\'t recognize any of the objects you\'re asking about\n\033[0m')
                 
+                object_found = False
                 for i in range(4):
 
                     frame = drone.get_frame_read().frame
@@ -302,6 +303,7 @@ def speech_commands():
                     if object_found == True: break
 
                     drone.rotate_clockwise(90)
+                    time.sleep(0.5)
 
                 if object_found == False:
                     print(f'\033[32m Requested object not found\033[0m')
