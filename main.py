@@ -267,7 +267,43 @@ def speech_commands():
 
             elif classified_command == "Find":
                 print(f'\033[34m{command}: {classified_command}\033[0m')
-                continue
+
+                completion = client.chat.completions.create(
+                    model="gpt-4-turbo",
+                    messages=[
+                        {"role": "system", "content": "Extract from the user command a list of objects to find. List of possible objects: person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, traffic light, fire hydrant, stop sign, parking meter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sports ball, kite, baseball bat, baseball glove, skateboard, surfboard, tennis racket, bottle, wine glass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake, chair, couch, potted plant, bed, dining table, toilet, tv, laptop, mouse, remote, keyboard, cell phone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddy bear, hair drier, toothbrush. Format your answer as comma separated values and empty sttring when no object found."},
+                        {"role": "user", "content": command}
+                    ]
+                )
+                
+                potential_objects = completion.choices[0].message.content.split(",")
+
+                if len(potential_objects) == 1 and potential_objects[0] == "":
+                    print(f'\033[32m I don\'t recognize any of the objects you\'re asking about\n\033[0m')
+                
+                for i in range(4):
+
+                    frame = drone.get_frame_read().frame
+                    # Convert the frame from BGR to RGB
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # Save the frame as a JPEG image
+                    cv2.imwrite('frame.jpg', frame)
+
+                    # Send frame to YOLO model
+                    detected_objects = object_detection("frame.jpg", image_model)[1]
+
+                    for object in potential_objects:
+                        if object in detected_objects:
+                            object_found = True
+                            print(f'\033[32m I found a(n) {object}\n\033[0m')
+                            break
+                    
+                    if object_found == True: break
+
+                    drone.rotate_clockwise(90)
+
+                if object_found == False:
+                    print(f'\033[32m Requested object not found\033[0m')
 
         except KeyboardInterrupt:
             break
