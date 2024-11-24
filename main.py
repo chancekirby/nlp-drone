@@ -290,10 +290,11 @@ def speech_commands():
                     cv2.imwrite('frame.jpg', frame)
 
                     # Send frame to YOLO model
-                    detected_objects = object_detection("frame.jpg", image_model)[1]
+                    _, detected_objects = object_detection("frame.jpg", image_model)
 
                     for object in potential_objects:
                         if object in detected_objects:
+                            print(detected_objects)
                             object_found = True
                             print(f'\033[32m I found a(n) {object}\n\033[0m')
                             break
