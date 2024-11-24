@@ -9,6 +9,7 @@ from ultralytics import YOLO
 from collections import Counter
 import json
 import cv2
+from transformers import pipeline
 
 SPEED = 50
 
@@ -193,6 +194,10 @@ def speech_commands():
     # Load the YOLOv8 model for object detection tasks
     image_model = YOLO('yolov8s.pt')
 
+    # Load the BERT model for command classification
+    classifier = pipeline('text-classification', model='Tyler-Howell/distilbert-command-classifier')
+    label_map = {"LABEL_0": "Launch", "LABEL_1": "Describe", "LABEL_2": "Find"} # Map labels to commands
+
     # Set up OpenAI client
     api_key = os.getenv("OPENAI_API_KEY")
     client = openai.OpenAI(api_key=api_key)
@@ -223,13 +228,16 @@ def speech_commands():
                 )
 
             command = transcript.text.lower()
-            print(command)
+            result = classifier(command)[0]
+            classified_command = label_map[result['label']]
 
-            if "launch" in command:
+            
+
+            if classified_command == "Launch":
                 drone.takeoff()
                 print(f'\033[34m{command}\033[0m')
 
-            elif "drone" in command:
+            elif classified_command == "Describe":
                 print(f'\033[34m{command}\033[0m')
                 question = ''
                 while question == '':
@@ -270,13 +278,17 @@ def speech_commands():
 
                 # Make the API call
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4-turbo",
                     messages=[
                         {"role": "system", "content": "You are an assistant that analyzes scene descriptions and answers questions based on them. If there is something, then say so, if not, then say 'I don't recognize any objects here'"},
                         {"role": "user", "content": prompt}
                     ]
                 )
                 print(f'\033[32m{response.choices[0].message.content}\n\033[0m')  # Print the response in green
+
+            elif classified_command == "Find":
+                pass
+
         except KeyboardInterrupt:
             break
         except Exception as e:
