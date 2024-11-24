@@ -11,6 +11,7 @@ import json
 import cv2
 from transformers import pipeline
 
+
 SPEED = 50
 
 # Global variable to manage control state
@@ -210,7 +211,7 @@ def speech_commands():
     while True:
         try:
             with mic as source:
-                print("Listening for launch or drone...")
+                print("Listening for instructions...")
                 audio = recognizer.listen(source)
 
                 
@@ -234,33 +235,11 @@ def speech_commands():
             
 
             if classified_command == "Launch":
+                print(f'\033[34m{command}: {classified_command}\033[0m')
                 drone.takeoff()
-                print(f'\033[34m{command}\033[0m')
 
             elif classified_command == "Describe":
-                print(f'\033[34m{command}\033[0m')
-                question = ''
-                while question == '':
-                    with mic as source:
-                        print("Listening for questions about what the drone sees...")
-                        audio = recognizer.listen(source)
-
-                    
-                    with open("output.wav", "wb") as f:
-                        f.write(audio.get_wav_data())
-
-                        
-                    # Send to OpenAI's Whisper API
-                    with open("output.wav", "rb") as audio_file:
-                        transcript = client.audio.transcriptions.create(
-                            file=audio_file,
-                            model="whisper-1",
-                            response_format="verbose_json",
-                            timestamp_granularities=["word"]
-                        )
-
-                    question = transcript.text.lower()
-                    print(question)
+                print(f'\033[34m{command}: {classified_command}\033[0m')
 
                 frame = drone.get_frame_read().frame
 
@@ -274,7 +253,7 @@ def speech_commands():
                 scene_description = object_detection("frame.jpg", image_model)
 
                 # Combine them into a single prompt for clarity
-                prompt = f"Scene description: {scene_description}\nQuestion: {question}"
+                prompt = f"Scene description: {scene_description}\nQuestion: {command}"
 
                 # Make the API call
                 response = client.chat.completions.create(
@@ -287,7 +266,8 @@ def speech_commands():
                 print(f'\033[32m{response.choices[0].message.content}\n\033[0m')  # Print the response in green
 
             elif classified_command == "Find":
-                pass
+                print(f'\033[34m{command}: {classified_command}\033[0m')
+                continue
 
         except KeyboardInterrupt:
             break
