@@ -12,8 +12,8 @@ import cv2
 
 SPEED = 50
 
-# # Global variable to manage control state
-# KEYBOARD_ACTIVE = False
+# Global variable to manage control state
+KEYBOARD_ACTIVE = False
 
 def keyboard_control_drone():
 
@@ -255,6 +255,10 @@ def speech_commands():
                     print(question)
 
                 frame = drone.get_frame_read().frame
+
+                # Convert the frame from BGR to RGB
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
                 # Save the frame as a JPEG image
                 cv2.imwrite('frame.jpg', frame)
 
@@ -266,9 +270,9 @@ def speech_commands():
 
                 # Make the API call
                 response = client.chat.completions.create(
-                    model="gpt-4-turbo",
+                    model="gpt-4o",
                     messages=[
-                        {"role": "system", "content": "You are an assistant that analyzes scene descriptions and answers questions based on them."},
+                        {"role": "system", "content": "You are an assistant that analyzes scene descriptions and answers questions based on them. If there is something, then say so, if not, then say 'I don't recognize any objects here'"},
                         {"role": "user", "content": prompt}
                     ]
                 )
@@ -286,7 +290,8 @@ def object_detection(image, model):
     Returns a string summary of the objects detected with their counts.
     '''
     # Run inference on an image
-    results = model(image, verbose=False)
+    results = model(image, verbose=False, save=True)
+
     detected_objects = results[0].to_json()
 
     # Parse JSON string into Python list
@@ -305,6 +310,10 @@ def stream_video(drone):
     '''
     while True:
         frame = drone.get_frame_read().frame
+
+        # Convert the frame from BGR to RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
         # Check if frame reading was successful
         cv2.imshow('tello stream', frame)
 
